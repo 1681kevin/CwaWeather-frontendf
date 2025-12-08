@@ -660,6 +660,88 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* === 賽博計算機 === */
+        .calc-section {
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.95) 0%, rgba(1, 1, 43, 0.95) 100%);
+            border: 2px solid var(--cyber-cyan);
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+            box-shadow: 0 0 25px rgba(5, 217, 232, 0.3);
+        }
+
+        .calc-section::before {
+            content: "NEO-CALC";
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            padding: 0 8px;
+            background: var(--cyber-dark);
+            color: var(--cyber-pink);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        .calc-display {
+            background: rgba(5, 217, 232, 0.08);
+            border: 1px solid rgba(5, 217, 232, 0.4);
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            font-family: monospace;
+            color: var(--cyber-green);
+            text-shadow: 0 0 12px var(--cyber-green);
+            min-height: 48px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            overflow: hidden;
+            word-break: break-all;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .calc-btn {
+            background: linear-gradient(135deg, rgba(5, 217, 232, 0.15), rgba(255, 42, 109, 0.15));
+            border: 1px solid rgba(5, 217, 232, 0.5);
+            color: white;
+            font-size: 1.1rem;
+            padding: 12px 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 0 12px rgba(5, 217, 232, 0.25);
+        }
+
+        .calc-btn:hover {
+            box-shadow: 0 0 18px rgba(5, 217, 232, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .calc-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .calc-btn.op {
+            color: var(--cyber-yellow);
+            border-color: rgba(249, 240, 2, 0.6);
+            text-shadow: 0 0 8px var(--cyber-yellow);
+        }
+
+        .calc-btn.equal {
+            grid-column: span 2;
+            background: linear-gradient(135deg, var(--cyber-pink), var(--cyber-purple));
+            border: 1px solid var(--cyber-cyan);
+            text-shadow: 0 0 10px white;
+        }
+
+        .calc-btn.wide {
+            grid-column: span 2;
+        }
     </style>
 </head>
 
@@ -696,6 +778,36 @@
 
         <!-- 舒適度區塊 -->
         <div class="comfort-section" id="comfortSection">
+        </div>
+
+        <!-- 賽博計算機 -->
+        <div class="calc-section">
+            <div class="calc-display" id="calcDisplay">0</div>
+            <div class="calc-grid" id="calcGrid">
+                <button class="calc-btn" data-action="clear">AC</button>
+                <button class="calc-btn" data-action="delete">DEL</button>
+                <button class="calc-btn op" data-value="%">%</button>
+                <button class="calc-btn op" data-value="/">÷</button>
+
+                <button class="calc-btn" data-value="7">7</button>
+                <button class="calc-btn" data-value="8">8</button>
+                <button class="calc-btn" data-value="9">9</button>
+                <button class="calc-btn op" data-value="*">×</button>
+
+                <button class="calc-btn" data-value="4">4</button>
+                <button class="calc-btn" data-value="5">5</button>
+                <button class="calc-btn" data-value="6">6</button>
+                <button class="calc-btn op" data-value="-">-</button>
+
+                <button class="calc-btn" data-value="1">1</button>
+                <button class="calc-btn" data-value="2">2</button>
+                <button class="calc-btn" data-value="3">3</button>
+                <button class="calc-btn op" data-value="+">+</button>
+
+                <button class="calc-btn wide" data-value="0">0</button>
+                <button class="calc-btn" data-value=".">.</button>
+                <button class="calc-btn equal" data-action="equal">=</button>
+            </div>
         </div>
 
         <h3 class="section-title">UPCOMING FORECAST</h3>
@@ -994,7 +1106,74 @@
             }, 1000);
         }
 
-        document.addEventListener("DOMContentLoaded", fetchWeather);
+        // === 賽博計算機邏輯 ===
+        let calcExpr = "0";
+
+        function updateCalcDisplay() {
+            document.getElementById('calcDisplay').textContent = calcExpr;
+        }
+
+        function resetCalc() {
+            calcExpr = "0";
+            updateCalcDisplay();
+        }
+
+        function deleteLast() {
+            if (calcExpr.length <= 1) {
+                calcExpr = "0";
+            } else {
+                calcExpr = calcExpr.slice(0, -1);
+            }
+            updateCalcDisplay();
+        }
+
+        function appendValue(val) {
+            if (calcExpr === "0" && /[0-9.]/.test(val)) {
+                calcExpr = val;
+            } else {
+                calcExpr += val;
+            }
+            updateCalcDisplay();
+        }
+
+        function evaluateCalc() {
+            try {
+                // 基本防護：僅允許數字與常見運算符
+                if (!/^[-+*/%.0-9\s]+$/.test(calcExpr)) {
+                    calcExpr = "ERR";
+                    return updateCalcDisplay();
+                }
+                const result = Function(`"use strict"; return (${calcExpr})`)();
+                calcExpr = (result === undefined || Number.isNaN(result)) ? "ERR" : String(result);
+            } catch (e) {
+                calcExpr = "ERR";
+            }
+            updateCalcDisplay();
+        }
+
+        function setupCalculator() {
+            const grid = document.getElementById('calcGrid');
+            if (!grid) return;
+
+            grid.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+
+                const action = btn.getAttribute('data-action');
+                const val = btn.getAttribute('data-value');
+
+                if (action === 'clear') return resetCalc();
+                if (action === 'delete') return deleteLast();
+                if (action === 'equal') return evaluateCalc();
+                if (val) return appendValue(val);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchWeather();
+            setupCalculator();
+            updateCalcDisplay();
+        });
     </script>
 </body>
 
